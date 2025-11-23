@@ -14,9 +14,11 @@ export enum AppMode {
 }
 
 export enum UserTier {
-  FREE = 'FREE',
-  PAID = 'PAID',
-  OWNER = 'OWNER'
+  PUBLIC = 'PUBLIC',              // No account (visitor)
+  EMAIL_SUBSCRIBER = 'EMAIL',     // Free account ($0)
+  TIER_1 = 'TIER_1',             // Base paid ($4.99/month)
+  TIER_2 = 'TIER_2',             // Premium ($9.99/month)
+  OWNER = 'OWNER'                // Admin (full access)
 }
 
 export type ScaleType = 'pentatonic' | 'major' | 'minor' | 'blues' | 'chromatic';
@@ -108,6 +110,7 @@ export interface Challenge {
   bpm: number;
   soundProfile?: SoundProfile;
   locked?: boolean; // For UI logic
+  requiredTier?: UserTier; // Minimum tier required to access
 }
 
 // Forum Types

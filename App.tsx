@@ -13,8 +13,8 @@ const App: React.FC = () => {
   const [stats, setStats] = useState<TypingStats | null>(null);
   const [currentRecording, setCurrentRecording] = useState<Recording | undefined>(undefined);
   
-  // User State (Default to Free for demo of paywall)
-  const [userTier, setUserTier] = useState<UserTier>(UserTier.FREE);
+  // User State (Default to PUBLIC for demo of paywall)
+  const [userTier, setUserTier] = useState<UserTier>(UserTier.PUBLIC);
 
   // Main start handler
   const handleStart = async (theme: string, selectedMode: AppMode, predefinedConfig?: SongConfig, recording?: Recording) => {
@@ -62,11 +62,18 @@ const App: React.FC = () => {
   return (
     <div className="w-full h-full text-white bg-symphony-obsidian">
       {state === AppState.LANDING && (
-        <Landing 
-            onStart={handleStart} 
-            isLoading={false} 
+        <Landing
+            onStart={handleStart}
+            isLoading={false}
             userTier={userTier}
-            onToggleSubscription={() => setUserTier(prev => prev === UserTier.FREE ? UserTier.PAID : UserTier.FREE)}
+            onToggleSubscription={() => {
+              setUserTier(prev => {
+                if (prev === UserTier.PUBLIC) return UserTier.EMAIL_SUBSCRIBER;
+                if (prev === UserTier.EMAIL_SUBSCRIBER) return UserTier.TIER_1;
+                if (prev === UserTier.TIER_1) return UserTier.TIER_2;
+                return UserTier.PUBLIC;
+              });
+            }}
         />
       )}
       

@@ -21,7 +21,11 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [showPaywall, setShowPaywall] = useState(false);
 
-  const isFree = userTier === UserTier.FREE;
+  // Access control helpers
+  const hasEmailAccess = userTier !== UserTier.PUBLIC;
+  const hasTier1Access = userTier === UserTier.TIER_1 || userTier === UserTier.TIER_2 || userTier === UserTier.OWNER;
+  const hasTier2Access = userTier === UserTier.TIER_2 || userTier === UserTier.OWNER;
+
   const styles: MusicalStyle[] = ['Dreamy', 'Happy', 'Sad', 'Soulful', 'Chaos', 'Neon Jazz', 'Cyber Classical', 'Glitch Hop'];
 
   useEffect(() => {
@@ -37,10 +41,13 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
 
   const handleStartFreePlay = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isFree) {
-        setShowPaywall(true);
-        return;
+
+    // Studio requires EMAIL_SUBSCRIBER or higher
+    if (!hasEmailAccess) {
+      setShowPaywall(true);
+      return;
     }
+
     audioEngine.start();
     const config: SongConfig = {
         theme: theme || "Free Improvisation",
@@ -54,7 +61,9 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
   };
 
   const handleStartChallenge = (challenge: Challenge) => {
-      if (challenge.locked && isFree) {
+      // Module 1 is public (no lock)
+      // Modules 2+ require EMAIL_SUBSCRIBER
+      if (challenge.locked && !hasEmailAccess) {
           setShowPaywall(true);
           return;
       }
@@ -71,7 +80,8 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
   };
 
   const handlePlayRecording = (rec: Recording) => {
-      if (isFree) {
+      // Remix/Playback requires TIER_2
+      if (!hasTier2Access) {
           setShowPaywall(true);
           return;
       }
@@ -108,11 +118,11 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
           </div>
 
           {/* Auth Mock Toggle */}
-          <button 
+          <button
             onClick={onToggleSubscription}
-            className={`text-[10px] font-mono uppercase px-2 py-1 rounded border transition-colors ${isFree ? 'border-gray-600 text-gray-400 hover:text-white' : 'border-symphony-amber text-symphony-amber hover:bg-symphony-amber/10'}`}
+            className="text-[10px] font-mono uppercase px-2 py-1 rounded border border-symphony-amber text-symphony-amber hover:bg-symphony-amber/10 transition-colors"
           >
-              {isFree ? 'Simulate: View as Subscriber' : 'Simulate: View as Free'}
+              Simulate: {userTier === UserTier.PUBLIC ? 'PUBLIC' : userTier === UserTier.EMAIL_SUBSCRIBER ? 'EMAIL' : userTier === UserTier.TIER_1 ? 'TIER_1' : userTier === UserTier.TIER_2 ? 'TIER_2' : 'OWNER'}
           </button>
 
           <nav className="flex items-center bg-white/5 rounded-full p-1 border border-white/10">
@@ -127,8 +137,8 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
                       }`}
                   >
                       {tab === 'curriculum' && <BookOpen size={16} />}
-                      {tab === 'studio' && (isFree ? <Lock size={14} className="text-gray-500" /> : <Mic size={16} />)}
-                      {tab === 'remix' && (isFree ? <Lock size={14} className="text-gray-500" /> : <LayoutGrid size={16} />)}
+                      {tab === 'studio' && (!hasEmailAccess ? <Lock size={14} className="text-gray-500" /> : <Mic size={16} />)}
+                      {tab === 'remix' && (!hasTier2Access ? <Lock size={14} className="text-gray-500" /> : <LayoutGrid size={16} />)}
                       {tab === 'community' && <Users size={16} />}
                       <span className="hidden md:inline">{tab}</span>
                   </button>
@@ -151,12 +161,12 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {CURRICULUM.map((item, idx) => (
-                        <div 
+                        <div
                             key={item.id}
                             onClick={() => handleStartChallenge(item)}
-                            className={`group relative bg-symphony-charcoal border rounded-2xl p-8 transition-all duration-300 overflow-hidden 
-                                ${item.locked && isFree 
-                                    ? 'border-white/5 opacity-80 hover:opacity-100 cursor-pointer grayscale-[0.5] hover:grayscale-0' 
+                            className={`group relative bg-symphony-charcoal border rounded-2xl p-8 transition-all duration-300 overflow-hidden
+                                ${item.locked && !hasEmailAccess
+                                    ? 'border-white/5 opacity-80 hover:opacity-100 cursor-pointer grayscale-[0.5] hover:grayscale-0'
                                     : 'border-white/5 hover:border-symphony-amber/50 cursor-pointer hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(0,0,0,0.5)]'
                                 }`}
                         >
@@ -167,9 +177,9 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
                                     <span className="font-mono text-4xl font-bold text-white/10 group-hover:text-symphony-amber/20 transition-colors">
                                         {(idx + 1).toString().padStart(2, '0')}
                                     </span>
-                                    {item.locked && isFree ? (
+                                    {item.locked && !hasEmailAccess ? (
                                         <div className="bg-black/50 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-gray-400 border border-white/10 flex items-center gap-2">
-                                            <Lock size={12} /> Premium
+                                            <Lock size={12} /> Email Required
                                         </div>
                                     ) : (
                                         <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
@@ -190,8 +200,8 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
                                         <Activity size={14} />
                                         <span>Target: {item.bpm} WPM</span>
                                     </div>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${item.locked && isFree ? 'bg-gray-800 text-gray-500' : 'bg-white/5 text-white group-hover:bg-symphony-amber group-hover:text-black'}`}>
-                                        {item.locked && isFree ? <Lock size={14} /> : <ChevronRight size={16} />}
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${item.locked && !hasEmailAccess ? 'bg-gray-800 text-gray-500' : 'bg-white/5 text-white group-hover:bg-symphony-amber group-hover:text-black'}`}>
+                                        {item.locked && !hasEmailAccess ? <Lock size={14} /> : <ChevronRight size={16} />}
                                     </div>
                                 </div>
                             </div>
@@ -204,20 +214,20 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
         {/* STUDIO TAB */}
         {activeTab === 'studio' && (
             <div className="h-full flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in-95 duration-500 relative">
-                {isFree && (
+                {!hasEmailAccess && (
                     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-symphony-obsidian/90 backdrop-blur-sm rounded-3xl border border-white/5">
                          <div className="bg-symphony-charcoal p-8 rounded-3xl border border-white/10 text-center max-w-md shadow-2xl">
                             <Lock size={48} className="text-symphony-amber mb-6 mx-auto" />
                             <h2 className="text-2xl font-bold mb-2">Studio Access Locked</h2>
-                            <p className="text-gray-400 mb-8">Unlock free improvisation, custom themes, AI generation, and recording capabilities.</p>
+                            <p className="text-gray-400 mb-8">Sign up for free to unlock improvisation, custom themes, and AI generation.</p>
                             <button onClick={() => setShowPaywall(true)} className="w-full px-8 py-4 bg-symphony-amber text-black font-bold rounded-xl hover:scale-105 transition-transform shadow-lg shadow-amber-500/20">
-                                Unlock Studio
+                                Sign Up Free
                             </button>
                          </div>
                     </div>
                 )}
-                
-                <div className={`w-full max-w-2xl text-center space-y-8 ${isFree ? 'blur-sm opacity-20 pointer-events-none' : ''}`}>
+
+                <div className={`w-full max-w-2xl text-center space-y-8 ${!hasEmailAccess ? 'blur-sm opacity-20 pointer-events-none' : ''}`}>
                     <div className="inline-block p-4 rounded-full bg-symphony-amber/10 border border-symphony-amber/20 mb-4">
                         <Globe className="text-symphony-amber w-8 h-8 animate-pulse-slow" />
                     </div>
@@ -236,10 +246,10 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
                                     key={style}
                                     type="button"
                                     onClick={() => setSelectedStyle(style)}
-                                    disabled={isFree}
+                                    disabled={!hasEmailAccess}
                                     className={`px-4 py-1 rounded-full text-xs font-mono font-bold uppercase border transition-all ${
-                                        selectedStyle === style 
-                                        ? 'bg-symphony-amber text-black border-symphony-amber shadow-[0_0_10px_rgba(245,158,11,0.4)]' 
+                                        selectedStyle === style
+                                        ? 'bg-symphony-amber text-black border-symphony-amber shadow-[0_0_10px_rgba(245,158,11,0.4)]'
                                         : 'bg-black/40 text-gray-400 border-white/10 hover:bg-white/5'
                                     }`}
                                 >
@@ -255,13 +265,13 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
                                 value={theme}
                                 onChange={(e) => setTheme(e.target.value)}
                                 placeholder={`Enter a theme for ${selectedStyle} style...`}
-                                disabled={isFree}
+                                disabled={!hasEmailAccess}
                                 className="relative w-full bg-black/50 border-2 border-white/10 focus:border-symphony-amber rounded-full px-8 py-6 text-2xl text-white placeholder-gray-600 outline-none transition-all shadow-2xl disabled:cursor-not-allowed"
-                                autoFocus={!isFree}
+                                autoFocus={hasEmailAccess}
                             />
                             <button
                                 type="submit"
-                                disabled={isLoading || isFree}
+                                disabled={isLoading || !hasEmailAccess}
                                 className="absolute right-3 top-3 bottom-3 px-8 bg-symphony-amber hover:bg-amber-400 text-black font-bold rounded-full transition-all flex items-center gap-2 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {isLoading ? <Sparkles className="animate-spin" /> : <Play fill="currentColor" />}
@@ -276,20 +286,20 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
         {/* REMIX TAB */}
         {activeTab === 'remix' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative h-full min-h-[50vh]">
-                 {isFree && (
+                 {!hasTier2Access && (
                     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-symphony-obsidian/90 backdrop-blur-sm rounded-3xl border border-white/5">
                          <div className="bg-symphony-charcoal p-8 rounded-3xl border border-white/10 text-center max-w-md shadow-2xl">
                              <Lock size={48} className="text-symphony-amber mb-6 mx-auto" />
                              <h2 className="text-2xl font-bold mb-2">Memory Core Locked</h2>
-                             <p className="text-gray-400 mb-8">Save, replay, and remix your sessions with a subscription.</p>
+                             <p className="text-gray-400 mb-8">Replay and remix your sessions with TIER_2 ($9.99/month).</p>
                              <button onClick={() => setShowPaywall(true)} className="w-full px-6 py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors shadow-lg">
-                                 Unlock Features
+                                 Upgrade to TIER_2
                              </button>
                          </div>
                     </div>
                 )}
 
-                 <div className={`mb-12 flex items-end justify-between ${isFree ? 'blur-sm opacity-20' : ''}`}>
+                 <div className={`mb-12 flex items-end justify-between ${!hasTier2Access ? 'blur-sm opacity-20' : ''}`}>
                     <div>
                         <h2 className="text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Memory Core</h2>
                         <p className="text-xl text-gray-400 font-light">
@@ -299,7 +309,7 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
                 </div>
 
                 {recordings.length === 0 ? (
-                    <div className={`flex flex-col items-center justify-center py-32 border-2 border-dashed border-white/5 rounded-3xl bg-white/[0.02] ${isFree ? 'blur-sm opacity-20' : ''}`}>
+                    <div className={`flex flex-col items-center justify-center py-32 border-2 border-dashed border-white/5 rounded-3xl bg-white/[0.02] ${!hasTier2Access ? 'blur-sm opacity-20' : ''}`}>
                         <Disc size={48} className="text-gray-600 mb-4" />
                         <p className="text-xl text-gray-400 font-mono">No data found in core.</p>
                         <button onClick={() => setActiveTab('studio')} className="mt-6 text-symphony-amber hover:underline font-mono uppercase text-sm tracking-widest">
@@ -307,7 +317,7 @@ const Landing: React.FC<Props> = ({ onStart, isLoading, userTier, onToggleSubscr
                         </button>
                     </div>
                 ) : (
-                    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${isFree ? 'blur-sm opacity-20 pointer-events-none' : ''}`}>
+                    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${!hasTier2Access ? 'blur-sm opacity-20 pointer-events-none' : ''}`}>
                         {recordings.slice().reverse().map(rec => (
                             <div key={rec.id} className="group bg-symphony-charcoal border border-white/5 hover:border-white/20 rounded-2xl p-6 flex flex-col gap-4 transition-all hover:bg-white/5">
                                 <div className="flex items-start justify-between">
