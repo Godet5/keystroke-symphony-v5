@@ -8,7 +8,8 @@ interface Props {
 }
 
 const Community: React.FC<Props> = ({ userTier }) => {
-  const isFree = userTier === UserTier.FREE;
+  // Community requires EMAIL_SUBSCRIBER or higher
+  const isPublic = userTier === UserTier.PUBLIC;
 
   return (
     <div className="w-full max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
@@ -19,9 +20,9 @@ const Community: React.FC<Props> = ({ userTier }) => {
              Connect with other conductors in the ether.
           </p>
         </div>
-        {isFree && (
+        {isPublic && (
            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-symphony-amber/10 border border-symphony-amber/20 text-symphony-amber text-xs font-bold uppercase tracking-widest">
-               <Lock size={14} /> Read Only Mode
+               <Lock size={14} /> Sign Up Free
            </div>
         )}
       </div>
@@ -58,12 +59,12 @@ const Community: React.FC<Props> = ({ userTier }) => {
                  <h3 className="text-xl font-bold text-white mb-2">{post.title}</h3>
                  
                  {/* Paywall Blur Logic */}
-                 <div className={`text-gray-400 relative ${isFree ? 'h-20 overflow-hidden' : ''}`}>
+                 <div className={`text-gray-400 relative ${isPublic ? 'h-20 overflow-hidden' : ''}`}>
                      <p>{post.content}</p>
-                     {isFree && (
+                     {isPublic && (
                          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-symphony-charcoal flex items-end justify-center pb-2">
                              <div className="flex items-center gap-2 text-symphony-amber text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full bg-black border border-symphony-amber shadow-2xl z-10">
-                                 <Lock size={12} /> Subscriber Only Content
+                                 <Lock size={12} /> Free Account Required
                              </div>
                          </div>
                      )}
@@ -72,14 +73,14 @@ const Community: React.FC<Props> = ({ userTier }) => {
 
              {/* Footer Actions */}
              <div className="flex items-center gap-6 pt-4 border-t border-white/5 text-gray-500 text-sm">
-                 <button disabled={isFree} className={`flex items-center gap-2 transition-colors ${isFree ? 'cursor-not-allowed opacity-50' : 'hover:text-red-500'}`}>
+                 <button disabled={isPublic} className={`flex items-center gap-2 transition-colors ${isPublic ? 'cursor-not-allowed opacity-50' : 'hover:text-red-500'}`}>
                      <Heart size={18} /> {post.likes}
                  </button>
-                 <button disabled={isFree} className={`flex items-center gap-2 transition-colors ${isFree ? 'cursor-not-allowed opacity-50' : 'hover:text-white'}`}>
+                 <button disabled={isPublic} className={`flex items-center gap-2 transition-colors ${isPublic ? 'cursor-not-allowed opacity-50' : 'hover:text-white'}`}>
                      <MessageSquare size={18} /> {post.comments} Comments
                  </button>
-                 {isFree && (
-                     <span className="ml-auto text-xs text-gray-600 font-mono uppercase">Join to participate</span>
+                 {isPublic && (
+                     <span className="ml-auto text-xs text-gray-600 font-mono uppercase">Sign up free to join</span>
                  )}
              </div>
 
@@ -87,16 +88,16 @@ const Community: React.FC<Props> = ({ userTier }) => {
         ))}
       </div>
 
-      {/* New Post Input (Disabled for free) */}
-      <div className={`mt-8 p-6 rounded-2xl border border-white/5 bg-white/[0.02] ${isFree ? 'opacity-50 pointer-events-none' : ''}`}>
+      {/* New Post Input (Disabled for PUBLIC) */}
+      <div className={`mt-8 p-6 rounded-2xl border border-white/5 bg-white/[0.02] ${isPublic ? 'opacity-50 pointer-events-none' : ''}`}>
           <div className="flex gap-4">
              <div className="w-10 h-10 rounded-full bg-gray-800" />
              <div className="flex-grow">
-                 <input 
-                    type="text" 
-                    placeholder={isFree ? "Subscribe to start a discussion..." : "Start a discussion..."}
-                    disabled={isFree}
-                    className="w-full bg-transparent border-b border-white/10 pb-2 text-white focus:border-symphony-amber outline-none" 
+                 <input
+                    type="text"
+                    placeholder={isPublic ? "Sign up free to start a discussion..." : "Start a discussion..."}
+                    disabled={isPublic}
+                    className="w-full bg-transparent border-b border-white/10 pb-2 text-white focus:border-symphony-amber outline-none"
                  />
              </div>
           </div>

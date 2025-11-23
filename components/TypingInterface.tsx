@@ -58,7 +58,8 @@ const TypingInterface: React.FC<Props> = ({ config, mode, recordingData, onCompl
   const gameLoopRef = useRef<number>(0);
   const lastKeystrokeTime = useRef<number>(0);
   
-  const isFree = userTier === UserTier.FREE;
+  // Recording requires TIER_1 or higher
+  const hasTier1Access = userTier === UserTier.TIER_1 || userTier === UserTier.TIER_2 || userTier === UserTier.OWNER;
 
   // Initialize Audio Engine
   useEffect(() => {
@@ -77,7 +78,7 @@ const TypingInterface: React.FC<Props> = ({ config, mode, recordingData, onCompl
 
   // --- RECORDING LOGIC ---
   useEffect(() => {
-      if (!isFree && recordEnabled && mode === AppMode.FREE_PLAY && canvasRef) {
+      if (hasTier1Access && recordEnabled && mode === AppMode.FREE_PLAY && canvasRef) {
           // Start recording if enabled and not already recording
           if (!isRecording && startTime) {
               const stream = canvasRef.captureStream(30);
@@ -91,7 +92,7 @@ const TypingInterface: React.FC<Props> = ({ config, mode, recordingData, onCompl
           setIsRecording(false);
           audioEngine.stopRecording();
       }
-  }, [mode, isRecording, canvasRef, isFree, recordEnabled, startTime]);
+  }, [mode, isRecording, canvasRef, hasTier1Access, recordEnabled, startTime]);
 
 
   // --- GAME LOOP ---
@@ -322,8 +323,8 @@ const TypingInterface: React.FC<Props> = ({ config, mode, recordingData, onCompl
           maxCombo: maxCombo
       };
 
-      // If recording, save it to local storage
-      if (mode === AppMode.FREE_PLAY && !isFree) { 
+      // If recording, save it to local storage (requires TIER_1)
+      if (mode === AppMode.FREE_PLAY && hasTier1Access) { 
           const newRecording: Recording = {
               id: Date.now().toString(),
               title: `Session ${new Date().toLocaleTimeString()}`,
@@ -465,15 +466,15 @@ const TypingInterface: React.FC<Props> = ({ config, mode, recordingData, onCompl
          <div className="flex items-center gap-4">
              {mode === AppMode.FREE_PLAY && (
                  <div className="flex items-center gap-2 bg-black/40 backdrop-blur rounded-full p-1 pr-4 border border-white/10">
-                     <button 
-                        onClick={() => !isFree && setRecordEnabled(!recordEnabled)}
-                        className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${recordEnabled ? 'bg-red-500' : 'bg-gray-700'} ${isFree ? 'opacity-50 cursor-not-allowed' : ''}`}
+                     <button
+                        onClick={() => hasTier1Access && setRecordEnabled(!recordEnabled)}
+                        className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${recordEnabled ? 'bg-red-500' : 'bg-gray-700'} ${!hasTier1Access ? 'opacity-50 cursor-not-allowed' : ''}`}
                      >
                          <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${recordEnabled ? 'translate-x-6' : ''}`} />
                      </button>
                      <div className="flex flex-col leading-none">
                          <span className={`text-xs font-bold uppercase ${recordEnabled ? 'text-white' : 'text-gray-400'}`}>REC</span>
-                         {isFree && <span className="text-[8px] text-symphony-amber flex items-center gap-1"><Lock size={6} /> PRO</span>}
+                         {!hasTier1Access && <span className="text-[8px] text-symphony-amber flex items-center gap-1"><Lock size={6} /> $4.99</span>}
                      </div>
                      {isRecording && <div className="w-2 h-2 rounded-full bg-red-500 animate-ping ml-2" />}
                  </div>

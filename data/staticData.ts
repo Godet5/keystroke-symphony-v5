@@ -20,7 +20,8 @@ export const CURRICULUM: Challenge[] = [
         reverbMix: 0.4,
         detune: 2
     },
-    locked: false // Only this one is Free
+    locked: false, // Only this one is Free
+    requiredTier: UserTier.PUBLIC // Public access (no account needed)
   },
   {
     id: 'teach_02',
@@ -41,7 +42,8 @@ export const CURRICULUM: Challenge[] = [
         reverbMix: 0.5,
         detune: 4
     },
-    locked: true // Paid
+    locked: true, // Paid
+    requiredTier: UserTier.EMAIL_SUBSCRIBER // Requires free account
   },
   {
     id: 'practice_01',
@@ -56,13 +58,14 @@ export const CURRICULUM: Challenge[] = [
         decay: 0.2,
         sustain: 0.2,
         release: 1.5,
-        filterFreq: 1200, 
-        filterQ: 1.0, 
+        filterFreq: 1200,
+        filterQ: 1.0,
         distortion: 0.05,
         reverbMix: 0.6,
         detune: 6
     },
-    locked: true // Paid
+    locked: true, // Paid
+    requiredTier: UserTier.EMAIL_SUBSCRIBER // Requires free account
   },
   {
     id: 'practice_02',
@@ -76,14 +79,15 @@ export const CURRICULUM: Challenge[] = [
         attack: 0.02,
         decay: 0.15,
         sustain: 0.1,
-        release: 0.6, 
-        filterFreq: 1400, 
-        filterQ: 1.0, 
+        release: 0.6,
+        filterFreq: 1400,
+        filterQ: 1.0,
         distortion: 0.05,
         reverbMix: 0.4,
         detune: 5
     },
-    locked: true // Paid
+    locked: true, // Paid
+    requiredTier: UserTier.EMAIL_SUBSCRIBER // Requires free account
   },
   {
     id: 'perfect_01',
@@ -104,7 +108,8 @@ export const CURRICULUM: Challenge[] = [
         reverbMix: 0.5,
         detune: 8
     },
-    locked: true // Paid
+    locked: true, // Paid
+    requiredTier: UserTier.EMAIL_SUBSCRIBER // Requires free account
   }
 ];
 
