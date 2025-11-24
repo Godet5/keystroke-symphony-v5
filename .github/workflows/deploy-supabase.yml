@@ -1,0 +1,65 @@
+name: Deploy Supabase Edge Functions
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - 'backend/functions/**'
+      - 'backend/schema.sql'
+  workflow_dispatch:
+
+jobs:
+  deploy-functions:
+    runs-on: ubuntu-latest
+    name: Deploy Edge Functions
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase Project
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Deploy Edge Functions
+        run: |
+          echo "Deploying Edge Functions..."
+          cd backend
+
+          # Deploy all functions
+          for func in functions/*/; do
+            func_name=$(basename "$func")
+            echo "Deploying $func_name..."
+            supabase functions deploy "$func_name" --no-verify-jwt
+          done
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Set Function Secrets
+        run: |
+          echo "Setting function secrets..."
+          supabase secrets set \
+            STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
+            STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
+            STRIPE_PRICE_TIER_1="${{ secrets.STRIPE_PRICE_TIER_1 }}" \
+            STRIPE_PRICE_TIER_2="${{ secrets.STRIPE_PRICE_TIER_2 }}" \
+            GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "✅ Edge Functions deployed successfully!"
+          supabase functions list
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

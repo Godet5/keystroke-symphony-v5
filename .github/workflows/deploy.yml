@@ -1,0 +1,51 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Cloudflare Pages
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: keystroke-symphony-v5
+          directory: dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref_name }}
+
+      - name: Deployment success notification
+        if: success()
+        run: |
+          echo "✅ Deployment successful!"
+          echo "🚀 Site deployed to Cloudflare Pages"
+          echo "📦 Build artifacts in dist/"
